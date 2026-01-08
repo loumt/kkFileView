@@ -1,8 +1,11 @@
 package cn.keking.service.impl;
 
 import cn.keking.model.FileAttribute;
+import cn.keking.model.PreviewOptions;
 import cn.keking.service.FilePreview;
 import cn.keking.utils.KkFileUtils;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.ui.Model;
 
@@ -11,11 +14,12 @@ import org.springframework.ui.Model;
  * Content :其他文件
  */
 @Service
+@AllArgsConstructor
+@Slf4j
 public class OtherFilePreviewImpl implements FilePreview {
 
-
     @Override
-    public String filePreviewHandle(String url, Model model, FileAttribute fileAttribute) {
+    public String filePreviewHandle(PreviewOptions options, Model model, FileAttribute fileAttribute) {
         return this.notSupportedFile(model, fileAttribute, "系统还不支持该格式文件的在线预览");
     }
 

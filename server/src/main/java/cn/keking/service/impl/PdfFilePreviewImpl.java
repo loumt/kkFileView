@@ -2,11 +2,14 @@ package cn.keking.service.impl;
 
 import cn.keking.config.ConfigConstants;
 import cn.keking.model.FileAttribute;
+import cn.keking.model.PreviewOptions;
 import cn.keking.model.ReturnResponse;
 import cn.keking.service.FileHandlerService;
 import cn.keking.service.FilePreview;
 import cn.keking.utils.DownloadUtils;
 import cn.keking.utils.WebUtils;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.poi.EncryptedDocumentException;
 import org.springframework.stereotype.Service;
@@ -20,17 +23,15 @@ import java.util.List;
  * Content :处理pdf文件
  */
 @Service
+@AllArgsConstructor
+@Slf4j
 public class PdfFilePreviewImpl implements FilePreview {
-
     private final FileHandlerService fileHandlerService;
     private final OtherFilePreviewImpl otherFilePreview;
     private static final String PDF_PASSWORD_MSG = "password";
-    public PdfFilePreviewImpl(FileHandlerService fileHandlerService, OtherFilePreviewImpl otherFilePreview) {
-        this.fileHandlerService = fileHandlerService;
-        this.otherFilePreview = otherFilePreview;
-    }
+
     @Override
-    public String filePreviewHandle(String url, Model model, FileAttribute fileAttribute) {
+    public String filePreviewHandle(PreviewOptions options, Model model, FileAttribute fileAttribute) {
         String pdfName = fileAttribute.getName();  //获取原始文件名
         String officePreviewType = fileAttribute.getOfficePreviewType(); //转换类型
         boolean forceUpdatedCache=fileAttribute.forceUpdatedCache();  //是否启用强制更新命令
@@ -76,7 +77,7 @@ public class PdfFilePreviewImpl implements FilePreview {
             }
         } else {
             // 不是http开头，浏览器不能直接访问，需下载到本地
-            if (url != null && !url.toLowerCase().startsWith("http")) {
+            if (!options.getEncodeUrl().toLowerCase().startsWith("http")) {
                 if (!fileHandlerService.listConvertedFiles().containsKey(pdfName) || !ConfigConstants.isCacheEnabled()) {
                     ReturnResponse<String> response = DownloadUtils.downLoad(fileAttribute, pdfName);
                     if (response.isFailure()) {
@@ -91,7 +92,7 @@ public class PdfFilePreviewImpl implements FilePreview {
                     model.addAttribute("pdfUrl", WebUtils.encodeFileName(pdfName));
                 }
             } else {
-                model.addAttribute("pdfUrl", url);
+                model.addAttribute("pdfUrl", options.getEncodeUrl());
             }
         }
         return PDF_FILE_PREVIEW_PAGE;

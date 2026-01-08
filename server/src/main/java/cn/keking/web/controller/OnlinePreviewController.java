@@ -1,6 +1,7 @@
 package cn.keking.web.controller;
 
 import cn.keking.model.FileAttribute;
+import cn.keking.model.PreviewOptions;
 import cn.keking.service.FileHandlerService;
 import cn.keking.service.FilePreview;
 import cn.keking.service.FilePreviewFactory;
@@ -8,8 +9,11 @@ import cn.keking.service.cache.CacheService;
 import cn.keking.service.impl.OtherFilePreviewImpl;
 import cn.keking.utils.KkFileUtils;
 import cn.keking.utils.WebUtils;
+import cn.keking.web.exceptions.PreviewException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fr.opensagres.xdocreport.core.io.IOUtils;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.hc.client5.http.impl.DefaultRedirectStrategy;
@@ -43,11 +47,10 @@ import static cn.keking.service.FilePreview.PICTURE_FILE_PREVIEW_PAGE;
  * @author yudian-it
  */
 @Controller
+@AllArgsConstructor
+@Slf4j
 public class OnlinePreviewController {
-
     public static final String BASE64_DECODE_ERROR_MSG = "Base64解码失败，请检查你的 %s 是否采用 Base64 + urlEncode 双重编码了！";
-    private final Logger logger = LoggerFactory.getLogger(OnlinePreviewController.class);
-
     private final FilePreviewFactory previewFactory;
     private final CacheService cacheService;
     private final FileHandlerService fileHandlerService;
@@ -56,32 +59,19 @@ public class OnlinePreviewController {
     private static  final HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory();
     private static final ObjectMapper mapper = new ObjectMapper();
 
-    public OnlinePreviewController(FilePreviewFactory filePreviewFactory, FileHandlerService fileHandlerService, CacheService cacheService, OtherFilePreviewImpl otherFilePreview) {
-        this.previewFactory = filePreviewFactory;
-        this.fileHandlerService = fileHandlerService;
-        this.cacheService = cacheService;
-        this.otherFilePreview = otherFilePreview;
-    }
 
     @GetMapping( "/onlinePreview")
-    public String onlinePreview(String url, Model model, HttpServletRequest req) {
+    public String onlinePreview(PreviewOptions options, Model model, HttpServletRequest req) {
+        //解码
+        options.parse();
 
-        String fileUrl;
-        try {
-            fileUrl = WebUtils.decodeUrl(url);
-        } catch (Exception ex) {
-            String errorMsg = String.format(BASE64_DECODE_ERROR_MSG, "url");
-            return otherFilePreview.notSupportedFile(model, errorMsg);
-        }
-        FileAttribute fileAttribute = fileHandlerService.getFileAttribute(fileUrl, req);  //这里不在进行URL 处理了
+        FileAttribute fileAttribute = fileHandlerService.getFileAttribute(options.getOriginUrl(), req);  //这里不在进行URL 处理了
         model.addAttribute("file", fileAttribute);
+
         FilePreview filePreview = previewFactory.get(fileAttribute);
-        logger.info("预览文件url：{}，previewType：{}", fileUrl, fileAttribute.getType());
-        fileUrl =WebUtils.urlEncoderencode(fileUrl);
-        if (ObjectUtils.isEmpty(fileUrl)) {
-            return otherFilePreview.notSupportedFile(model, "非法路径,不允许访问");
-        }
-        return filePreview.filePreviewHandle(fileUrl, model, fileAttribute);  //统一在这里处理 url
+        log.info("预览文件url：{}，previewType：{}", options.getOriginUrl(), fileAttribute.getType());
+
+        return filePreview.filePreviewHandle(options, model, fileAttribute);  //统一在这里处理 url
     }
 
     @GetMapping( "/picturesPreview")
@@ -95,7 +85,7 @@ public class OnlinePreviewController {
             String errorMsg = String.format(BASE64_DECODE_ERROR_MSG, "urls");
             return otherFilePreview.notSupportedFile(model, errorMsg);
         }
-        logger.info("预览文件url：{}，urls：{}", fileUrls, urls);
+        log.info("预览文件url：{}，urls：{}", fileUrls, urls);
         // 抽取文件并返回文件列表
         String[] images = fileUrls.split("\\|");
         List<String> imgUrls = Arrays.asList(images);
@@ -125,16 +115,16 @@ public class OnlinePreviewController {
             urlPath = WebUtils.decodeUrl(urlPath);
             url = WebUtils.normalizedURL(urlPath);
         } catch (Exception ex) {
-            logger.error(String.format(BASE64_DECODE_ERROR_MSG, urlPath),ex);
+            log.error(String.format(BASE64_DECODE_ERROR_MSG, urlPath),ex);
             return;
         }
         assert urlPath != null;
         if (!urlPath.toLowerCase().startsWith("http") && !urlPath.toLowerCase().startsWith("https") && !urlPath.toLowerCase().startsWith("ftp")) {
-            logger.info("读取跨域文件异常，可能存在非法访问，urlPath：{}", urlPath);
+            log.info("读取跨域文件异常，可能存在非法访问，urlPath：{}", urlPath);
             return;
         }
         InputStream inputStream = null;
-        logger.info("读取跨域pdf文件url：{}", urlPath);
+        log.info("读取跨域pdf文件url：{}", urlPath);
         if (!urlPath.toLowerCase().startsWith("ftp:")) {
             factory.setConnectionRequestTimeout(2000);
             factory.setConnectTimeout(10000);
@@ -166,7 +156,7 @@ public class OnlinePreviewController {
                 inputStream = (url).openStream();
                 IOUtils.copy(inputStream, response.getOutputStream());
             } catch (IOException e) {
-                logger.error("读取跨域文件异常，url：{}", urlPath);
+                log.error("读取跨域文件异常，url：{}", urlPath);
             } finally {
                 IOUtils.closeQuietly(inputStream);
             }
@@ -181,7 +171,7 @@ public class OnlinePreviewController {
     @GetMapping("/addTask")
     @ResponseBody
     public String addQueueTask(String url) {
-        logger.info("添加转码队列url：{}", url);
+        log.info("添加转码队列url：{}", url);
         cacheService.addQueueTask(url);
         return "success";
     }

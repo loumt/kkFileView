@@ -5,6 +5,8 @@ import cn.keking.model.FileAttribute;
 import cn.keking.model.FileType;
 import cn.keking.utils.RarUtils;
 import cn.keking.web.filter.BaseUrlFilter;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import net.sf.sevenzipjbinding.ExtractOperationResult;
 import net.sf.sevenzipjbinding.IInArchive;
 import net.sf.sevenzipjbinding.SevenZip;
@@ -33,13 +35,11 @@ import java.util.List;
  * create 2017/11/27
  */
 @Component
+@AllArgsConstructor
+@Slf4j
 public class CompressFileReader {
     private final FileHandlerService fileHandlerService;
     private static final String fileDir = ConfigConstants.getFileDir();
-
-    public CompressFileReader(FileHandlerService fileHandlerService) {
-        this.fileHandlerService = fileHandlerService;
-    }
 
     public String unRar(String filePath, String filePassword, String fileName, FileAttribute fileAttribute) throws Exception {
         List<String> imgUrls = new ArrayList<>();

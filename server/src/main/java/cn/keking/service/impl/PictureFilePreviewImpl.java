@@ -1,8 +1,11 @@
 package cn.keking.service.impl;
 
 import cn.keking.model.FileAttribute;
+import cn.keking.model.PreviewOptions;
 import cn.keking.service.FileHandlerService;
 import cn.keking.utils.KkFileUtils;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.ui.Model;
 import org.springframework.util.CollectionUtils;
@@ -15,6 +18,7 @@ import java.util.List;
  * Content :图片文件处理
  */
 @Service
+@Slf4j
 public class PictureFilePreviewImpl extends CommonPreviewImpl {
 
     private final FileHandlerService fileHandlerService;
@@ -25,8 +29,8 @@ public class PictureFilePreviewImpl extends CommonPreviewImpl {
     }
 
     @Override
-    public String filePreviewHandle(String url, Model model, FileAttribute fileAttribute) {
-        url= KkFileUtils.htmlEscape(url);
+    public String filePreviewHandle(PreviewOptions options, Model model, FileAttribute fileAttribute) {
+        String url= KkFileUtils.htmlEscape(options.getEncodeUrl());
         List<String> imgUrls = new ArrayList<>();
         imgUrls.add(url);
         String compressFileKey = fileAttribute.getCompressFileKey();
@@ -35,7 +39,8 @@ public class PictureFilePreviewImpl extends CommonPreviewImpl {
             imgUrls.addAll(zipImgUrls);
         }
         // 不是http开头，浏览器不能直接访问，需下载到本地
-        super.filePreviewHandle(url, model, fileAttribute);
+        options.setEncodeUrl(url);
+        super.filePreviewHandle(options, model, fileAttribute);
         model.addAttribute("imgUrls", imgUrls);
         return PICTURE_FILE_PREVIEW_PAGE;
     }

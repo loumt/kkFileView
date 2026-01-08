@@ -2,13 +2,17 @@ package cn.keking.service.impl;
 
 import cn.keking.config.ConfigConstants;
 import cn.keking.model.FileAttribute;
+import cn.keking.model.PreviewOptions;
 import cn.keking.model.ReturnResponse;
 import cn.keking.service.FileHandlerService;
 import cn.keking.service.FilePreview;
 import cn.keking.utils.DownloadUtils;
 import cn.keking.utils.EncodingDetects;
 import cn.keking.utils.KkFileUtils;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -27,27 +31,21 @@ import java.nio.charset.StandardCharsets;
  * Content :处理文本文件
  */
 @Service
+@Slf4j
+@AllArgsConstructor
 public class SimTextFilePreviewImpl implements FilePreview {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(SimTextFilePreviewImpl.class);
-
     private final FileHandlerService fileHandlerService;
     private final OtherFilePreviewImpl otherFilePreview;
 
-    public SimTextFilePreviewImpl(FileHandlerService fileHandlerService, OtherFilePreviewImpl otherFilePreview) {
-        this.fileHandlerService = fileHandlerService;
-        this.otherFilePreview = otherFilePreview;
-    }
-
     @Override
-    public String filePreviewHandle(String url, Model model, FileAttribute fileAttribute) {
-        String fileName = fileAttribute.getName();
-        boolean forceUpdatedCache=fileAttribute.forceUpdatedCache();
-        String filePath = fileAttribute.getOriginFilePath();
+    public String filePreviewHandle(PreviewOptions options, Model model, FileAttribute attribute) {
+        String fileName = attribute.getName();
+        boolean forceUpdatedCache= attribute.forceUpdatedCache();
+        String filePath = attribute.getOriginFilePath();
         if (forceUpdatedCache || !fileHandlerService.listConvertedFiles().containsKey(fileName) || !ConfigConstants.isCacheEnabled()) {
-            ReturnResponse<String> response = DownloadUtils.downLoad(fileAttribute, fileName);
+            ReturnResponse<String> response = DownloadUtils.downLoad(attribute, fileName);
             if (response.isFailure()) {
-                return otherFilePreview.notSupportedFile(model, fileAttribute, response.getMsg());
+                return otherFilePreview.notSupportedFile(model, attribute, response.getMsg());
             }
             filePath = response.getContent();
             if (ConfigConstants.isCacheEnabled()) {
@@ -55,9 +53,14 @@ public class SimTextFilePreviewImpl implements FilePreview {
             }
             try {
                 String  fileData = HtmlUtils.htmlEscape(textData(filePath,fileName));
+
+                //高亮处理
+                if(!StringUtils.isAnyEmpty(options.getSearchKey(), fileData)){
+                    fileData = highLight(fileData, options.getSearchKey());
+                }
                 model.addAttribute("textData", Base64.encodeBase64String(fileData.getBytes(StandardCharsets.UTF_8)));
             } catch (IOException e) {
-                return otherFilePreview.notSupportedFile(model, fileAttribute, e.getLocalizedMessage());
+                return otherFilePreview.notSupportedFile(model, attribute, e.getLocalizedMessage());
             }
             return TXT_FILE_PREVIEW_PAGE;
         }
@@ -65,10 +68,23 @@ public class SimTextFilePreviewImpl implements FilePreview {
         try {
             fileData = HtmlUtils.htmlEscape(textData(filePath,fileName));
         } catch (IOException e) {
-            LOGGER.error("读取文本文件失败: {}", filePath, e);
+            log.error("读取文本文件失败: {}", filePath, e);
+        }
+
+        //高亮处理
+        if(!StringUtils.isAnyEmpty(options.getSearchKey(), fileData)){
+            fileData = highLight(fileData, options.getSearchKey());
         }
         model.addAttribute("textData", Base64.encodeBase64String(fileData.getBytes(StandardCharsets.UTF_8)));
         return TXT_FILE_PREVIEW_PAGE;
+    }
+
+    private String highLight(String fileData, String searchKey) {
+        if(!StringUtils.isAnyEmpty(fileData, searchKey)){
+            return fileData.replaceAll(searchKey, "<mark>" + searchKey + "</mark>");
+        }else{
+            return fileData;
+        }
     }
 
     private String textData(String filePath,String fileName) throws IOException {

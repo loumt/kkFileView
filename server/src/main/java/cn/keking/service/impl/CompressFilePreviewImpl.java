@@ -2,12 +2,15 @@ package cn.keking.service.impl;
 
 import cn.keking.config.ConfigConstants;
 import cn.keking.model.FileAttribute;
+import cn.keking.model.PreviewOptions;
 import cn.keking.model.ReturnResponse;
 import cn.keking.service.FilePreview;
 import cn.keking.utils.DownloadUtils;
 import cn.keking.service.FileHandlerService;
 import cn.keking.service.CompressFileReader;
 import cn.keking.utils.KkFileUtils;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.poi.EncryptedDocumentException;
 import org.slf4j.Logger;
@@ -23,6 +26,8 @@ import java.io.IOException;
  * Content :处理压缩包文件
  */
 @Service
+@AllArgsConstructor
+@Slf4j
 public class CompressFilePreviewImpl implements FilePreview {
 
     private final FileHandlerService fileHandlerService;
@@ -32,14 +37,9 @@ public class CompressFilePreviewImpl implements FilePreview {
     private static final Logger logger = org.slf4j.LoggerFactory.getLogger(CompressFileReader.class);
 
 
-    public CompressFilePreviewImpl(FileHandlerService fileHandlerService, CompressFileReader compressFileReader, OtherFilePreviewImpl otherFilePreview) {
-        this.fileHandlerService = fileHandlerService;
-        this.compressFileReader = compressFileReader;
-        this.otherFilePreview = otherFilePreview;
-    }
 
     @Override
-    public String filePreviewHandle(String url, Model model, FileAttribute fileAttribute) {
+    public String filePreviewHandle(PreviewOptions options, Model model, FileAttribute fileAttribute) {
         String fileName = fileAttribute.getName();
         String filePassword = fileAttribute.getFilePassword();
         boolean forceUpdatedCache = fileAttribute.forceUpdatedCache();

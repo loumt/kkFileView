@@ -1,6 +1,7 @@
 package cn.keking.utils;
 
 import io.mola.galimatias.GalimatiasParseException;
+import io.mola.galimatias.URLUtils;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -261,6 +262,19 @@ public class WebUtils {
         return matcher.find();
     }
 
+
+    /**
+     * 将 URL 字符串编码, 默认使用 UTF-8
+     * @param url 原始文件路径
+     * @return result string
+     *
+     * http://172.16.9.100:9000/mediate/2026/01/04/联想截图_20250326133441.png -> aHR0cDovLzE3Mi4xNi45LjEwMDo5MDAwL21lZGlhdGUvMjAyNi8wMS8wNC%2FogZTmg7PmiKrlm75fMjAyNTAzMjYxMzM0NDEucG5n
+     */
+    public static String encodeUrl(String url) {
+        String b64 = java.util.Base64.getEncoder().encodeToString(url.getBytes(StandardCharsets.UTF_8));
+        return URLEncoder.encode(b64, StandardCharsets.UTF_8).replace("+", "%20");
+    }
+
     /**
      * 将 Base64 字符串解码，再解码URL参数, 默认使用 UTF-8
      * @param source 原始 Base64 字符串
@@ -370,5 +384,12 @@ public class WebUtils {
             return;
         }
         session.removeAttribute(key);
+    }
+
+    public static void main(String[] args) {
+        //http://172.16.9.100:9000/mediate/2026/01/04/联想截图_20250326133441.png
+        //aHR0cDovLzE3Mi4xNi45LjEwMDo5MDAwL21lZGlhdGUvMjAyNi8wMS8wNC%2FogZTmg7PmiKrlm75fMjAyNTAzMjYxMzM0NDEucG5n
+        String url = "http://172.16.9.100:9000/mediate/2026/01/04/联想截图_20250326133441.png|http://172.16.9.100:9000/mediate/2026/01/04/联想截图_20241220151949.png";
+        System.out.println(encodeUrl(url));
     }
 }

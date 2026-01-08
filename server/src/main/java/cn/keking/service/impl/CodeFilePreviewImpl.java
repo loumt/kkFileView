@@ -1,7 +1,10 @@
 package cn.keking.service.impl;
 
 import cn.keking.model.FileAttribute;
+import cn.keking.model.PreviewOptions;
 import cn.keking.service.FilePreview;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.ui.Model;
 
@@ -10,17 +13,14 @@ import org.springframework.ui.Model;
  * @since 2021/2/18
  */
 @Component
+@AllArgsConstructor
+@Slf4j
 public class CodeFilePreviewImpl implements FilePreview {
-
    private final SimTextFilePreviewImpl filePreviewHandle;
 
-    public CodeFilePreviewImpl(SimTextFilePreviewImpl filePreviewHandle) {
-        this.filePreviewHandle = filePreviewHandle;
-    }
-
     @Override
-    public String filePreviewHandle(String url, Model model, FileAttribute fileAttribute) {
-         filePreviewHandle.filePreviewHandle(url, model, fileAttribute);
+    public String filePreviewHandle(PreviewOptions options, Model model, FileAttribute fileAttribute) {
+        filePreviewHandle.filePreviewHandle(options, model, fileAttribute);
         return CODE_FILE_PREVIEW_PAGE;
     }
 }

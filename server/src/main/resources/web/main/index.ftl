@@ -126,13 +126,56 @@
                     </div>
                 </div>
 
+                <div class="row">
+                    <div class="col-md-2">
+                        关键词
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <input type="text" class="form-control" id="_search_key" placeholder="关键词">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        备注: 高亮显示
+                    </div>
+                <div>
+
+                </div>
+
                 <div class="alert alert-danger alert-dismissable hide" role="alert" id="previewCheckAlert">
                     <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                     <strong>请输入正确的url</strong>
                 </div>
+            </form>
+        </div>
+    </div>
 
+    <#--  多图片预览  -->
+    <div class="panel panel-success">
+        <div class="panel-heading">
+            <h3 class="panel-title">多图预览</h3>
+        </div>
+        <div class="panel-body">
+            <form>
+                <div class="row">
+                    <div class="col-md-10">
+                        <div class="form-group">
+                            <input type="url" class="form-control" id="_pic_urls" placeholder="请输入图片 url,使用 | 分割">
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <button id="previewPicByUrls" type="button" class="btn btn-success">预览</button>
+                    </div>
+                </div>
+
+                <div class="alert alert-danger alert-dismissable hide" role="alert" id="previewPicsCheckAlert">
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                    <strong>请输入正确的url</strong>
+                </div>
             </form>
         </div>
     </div>
@@ -306,8 +349,27 @@
             }
 
             var b64Encoded = Base64.encode(_url);
+            var redirectUrl = '${baseUrl}onlinePreview?url=' + encodeURIComponent(b64Encoded) + "&searchKey=" + $("#_search_key").val()
+            window.open(redirectUrl);
+        });
 
-            window.open('${baseUrl}onlinePreview?url=' + encodeURIComponent(b64Encoded));
+        $('#previewPicByUrls').on('click', function () {
+            var _url = $("#_pic_urls").val();
+            // check url
+
+            var urls = _url.split("|");
+            for (const u of urls) {
+                if (!checkUrl(u)) {
+                    $("#previewPicsCheckAlert").addClass("show");
+                    window.setTimeout(function () {
+                        $("#previewPicsCheckAlert").removeClass("show");
+                    }, 3000);//显示的时间
+                    return false;
+                }
+            }
+
+            var b64Encoded = Base64.encode(_url);
+            window.open('${baseUrl}picturesPreview?urls=' + encodeURIComponent(b64Encoded));
         });
 
         $("#fileUploadBtn").click(function () {

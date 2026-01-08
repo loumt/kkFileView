@@ -1,11 +1,14 @@
 package cn.keking.service.impl;
 
 import cn.keking.model.FileAttribute;
+import cn.keking.model.PreviewOptions;
 import cn.keking.model.ReturnResponse;
 import cn.keking.service.FileHandlerService;
 import cn.keking.service.FilePreview;
 import cn.keking.utils.DownloadUtils;
 import cn.keking.utils.KkFileUtils;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.ui.Model;
@@ -19,20 +22,17 @@ import java.util.List;
  * Content :图片文件处理
  */
 @Component("commonPreview")
+@Slf4j
+@AllArgsConstructor
 public class CommonPreviewImpl implements FilePreview {
 
     private final FileHandlerService fileHandlerService;
     private final OtherFilePreviewImpl otherFilePreview;
 
-    public CommonPreviewImpl(FileHandlerService fileHandlerService, OtherFilePreviewImpl otherFilePreview) {
-        this.fileHandlerService = fileHandlerService;
-        this.otherFilePreview = otherFilePreview;
-    }
-
     @Override
-    public String filePreviewHandle(String url, Model model, FileAttribute fileAttribute) {
+    public String filePreviewHandle(PreviewOptions options, Model model, FileAttribute fileAttribute) {
         // 不是http开头，浏览器不能直接访问，需下载到本地
-        if (url != null && !url.toLowerCase().startsWith("http")) {
+        if (!options.getEncodeUrl().toLowerCase().startsWith("http")) {
             ReturnResponse<String> response = DownloadUtils.downLoad(fileAttribute, null);
             if (response.isFailure()) {
                 return otherFilePreview.notSupportedFile(model, fileAttribute, response.getMsg());
@@ -41,7 +41,7 @@ public class CommonPreviewImpl implements FilePreview {
                 model.addAttribute("currentUrl", file);
             }
         } else {
-            model.addAttribute("currentUrl", url);
+            model.addAttribute("currentUrl", options.getEncodeUrl());
         }
         return null;
     }

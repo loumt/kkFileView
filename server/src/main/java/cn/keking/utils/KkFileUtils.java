@@ -209,4 +209,15 @@ public class KkFileUtils {
         return file.exists();
     }
 
+
+    public static String getFileName(String fileName){
+        return fileName.substring(0, fileName.lastIndexOf("."));
+    }
+
+    public static String appendFileName(String fileName, String appendSuffix){
+        String ext = suffixFromFileName(fileName);
+        String fn =  fileName.substring(0, fileName.lastIndexOf("."));
+        return fn + "_" + appendSuffix + "." + ext;
+    }
+
 }

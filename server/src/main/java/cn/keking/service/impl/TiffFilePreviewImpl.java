@@ -2,6 +2,7 @@ package cn.keking.service.impl;
 
 import cn.keking.config.ConfigConstants;
 import cn.keking.model.FileAttribute;
+import cn.keking.model.PreviewOptions;
 import cn.keking.model.ReturnResponse;
 import cn.keking.service.FileHandlerService;
 import cn.keking.service.FilePreview;
@@ -9,6 +10,8 @@ import cn.keking.utils.ConvertPicUtil;
 import cn.keking.utils.DownloadUtils;
 import cn.keking.utils.KkFileUtils;
 import cn.keking.utils.WebUtils;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.ui.Model;
 
@@ -21,16 +24,15 @@ import java.util.List;
  * @since 2021/2/8
  */
 @Service
+@AllArgsConstructor
+@Slf4j
 public class TiffFilePreviewImpl implements FilePreview {
 
     private final FileHandlerService fileHandlerService;
     private final OtherFilePreviewImpl otherFilePreview;
-    public TiffFilePreviewImpl(FileHandlerService fileHandlerService,OtherFilePreviewImpl otherFilePreview) {
-        this.fileHandlerService = fileHandlerService;
-        this.otherFilePreview = otherFilePreview;
-    }
+
     @Override
-    public String filePreviewHandle(String url, Model model, FileAttribute fileAttribute) {
+    public String filePreviewHandle(PreviewOptions options, Model model, FileAttribute fileAttribute) {
         String fileName = fileAttribute.getName();
         String tifPreviewType = ConfigConstants.getTifPreviewType();
         String cacheName =  fileAttribute.getCacheName();
@@ -48,8 +50,8 @@ public class TiffFilePreviewImpl implements FilePreview {
                        ConvertPicUtil.convertJpg2Pdf(filePath, outFilePath);
                     } catch (Exception e) {
                         if (e.getMessage().contains("Bad endianness tag (not 0x4949 or 0x4d4d)") ) {
-                            model.addAttribute("imgUrls", url);
-                            model.addAttribute("currentUrl", url);
+                            model.addAttribute("imgUrls", options.getEncodeUrl());
+                            model.addAttribute("currentUrl", options.getEncodeUrl());
                             return PICTURE_FILE_PREVIEW_PAGE;
                         }else {
                             return otherFilePreview.notSupportedFile(model, fileAttribute, "TIF转pdf异常，请联系系统管理员!" );
@@ -72,8 +74,8 @@ public class TiffFilePreviewImpl implements FilePreview {
                         listPic2Jpg = ConvertPicUtil.convertTif2Jpg(filePath, outFilePath,forceUpdatedCache);
                     } catch (Exception e) {
                         if (e.getMessage().contains("Bad endianness tag (not 0x4949 or 0x4d4d)") ) {
-                            model.addAttribute("imgUrls", url);
-                            model.addAttribute("currentUrl", url);
+                            model.addAttribute("imgUrls", options.getEncodeUrl());
+                            model.addAttribute("currentUrl", options.getEncodeUrl());
                             return PICTURE_FILE_PREVIEW_PAGE;
                         }else {
                             return otherFilePreview.notSupportedFile(model, fileAttribute, "TIF转JPG异常，请联系系统管理员!" );
@@ -104,7 +106,7 @@ public class TiffFilePreviewImpl implements FilePreview {
             }
         }
         // 不是http开头，浏览器不能直接访问，需下载到本地
-        if (url != null && !url.toLowerCase().startsWith("http")) {
+        if (!options.getEncodeUrl().toLowerCase().startsWith("http")) {
             if (forceUpdatedCache || !fileHandlerService.listConvertedFiles().containsKey(fileName) || !ConfigConstants.isCacheEnabled()) {
                 ReturnResponse<String> response = DownloadUtils.downLoad(fileAttribute, fileName);
                 if (response.isFailure()) {
@@ -120,7 +122,7 @@ public class TiffFilePreviewImpl implements FilePreview {
             }
             return TIFF_FILE_PREVIEW_PAGE;
         }
-        model.addAttribute("currentUrl", url);
+        model.addAttribute("currentUrl", options.getEncodeUrl());
         return TIFF_FILE_PREVIEW_PAGE;
     }
 }

@@ -2,7 +2,10 @@ package cn.keking.service;
 
 import cn.keking.model.FileAttribute;
 import cn.keking.model.FileType;
+import cn.keking.model.PreviewOptions;
 import cn.keking.service.cache.CacheService;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -16,24 +19,18 @@ import java.util.concurrent.TimeUnit;
  * Content :消费队列中的转换文件
  */
 @Service
+@AllArgsConstructor
+@Slf4j
 public class FileConvertQueueTask {
-
-    private final Logger logger = LoggerFactory.getLogger(getClass());
     private final FilePreviewFactory previewFactory;
     private final CacheService cacheService;
     private final FileHandlerService fileHandlerService;
-
-    public FileConvertQueueTask(FilePreviewFactory previewFactory, CacheService cacheService, FileHandlerService fileHandlerService) {
-        this.previewFactory = previewFactory;
-        this.cacheService = cacheService;
-        this.fileHandlerService = fileHandlerService;
-    }
 
     @PostConstruct
     public void startTask() {
         new Thread(new ConvertTask(previewFactory, cacheService, fileHandlerService))
                 .start();
-        logger.info("队列处理文件转换任务启动完成 ");
+        log.info("队列处理文件转换任务启动完成 ");
     }
 
     static class ConvertTask implements Runnable {
@@ -63,7 +60,9 @@ public class FileConvertQueueTask {
                         logger.info("正在处理预览转换任务，url：{}，预览类型：{}", url, fileType);
                         if (isNeedConvert(fileType)) {
                             FilePreview filePreview = previewFactory.get(fileAttribute);
-                            filePreview.filePreviewHandle(url, new ExtendedModelMap(), fileAttribute);
+                            PreviewOptions options = new PreviewOptions();
+                            options.setEncodeUrl(url);
+                            filePreview.filePreviewHandle(options, new ExtendedModelMap(), fileAttribute);
                         } else {
                             logger.info("预览类型无需处理，url：{}，预览类型：{}", url, fileType);
                         }

@@ -3,10 +3,13 @@ package cn.keking.service.impl;
 import cn.keking.config.ConfigConstants;
 import cn.keking.model.FileAttribute;
 import cn.keking.model.FileType;
+import cn.keking.model.PreviewOptions;
 import cn.keking.model.ReturnResponse;
 import cn.keking.service.FileHandlerService;
 import cn.keking.service.FilePreview;
 import cn.keking.utils.DownloadUtils;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.bytedeco.ffmpeg.global.avcodec;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.FFmpegFrameRecorder;
@@ -26,6 +29,8 @@ import java.io.File;
  * @description:
  **/
 @Service
+@AllArgsConstructor
+@Slf4j
 public class MediaFilePreviewImpl implements FilePreview {
 
     private static final Logger logger = LoggerFactory.getLogger(MediaFilePreviewImpl.class);
@@ -33,13 +38,9 @@ public class MediaFilePreviewImpl implements FilePreview {
     private final OtherFilePreviewImpl otherFilePreview;
     private static final String mp4 = "mp4";
 
-    public MediaFilePreviewImpl(FileHandlerService fileHandlerService, OtherFilePreviewImpl otherFilePreview) {
-        this.fileHandlerService = fileHandlerService;
-        this.otherFilePreview = otherFilePreview;
-    }
 
     @Override
-    public String filePreviewHandle(String url, Model model, FileAttribute fileAttribute) {
+    public String filePreviewHandle(PreviewOptions options, Model model, FileAttribute fileAttribute) {
         String fileName = fileAttribute.getName();
         String suffix = fileAttribute.getSuffix();
         String cacheName = fileAttribute.getCacheName();
@@ -54,7 +55,7 @@ public class MediaFilePreviewImpl implements FilePreview {
                 break;
             }
         }
-        if (!url.toLowerCase().startsWith("http") || checkNeedConvert(mediaTypes)) {  //不是http协议的 //   开启转换方式并是支持转换格式的
+        if (!options.getEncodeUrl().toLowerCase().startsWith("http") || checkNeedConvert(mediaTypes)) {  //不是http协议的 //   开启转换方式并是支持转换格式的
             if (forceUpdatedCache || !fileHandlerService.listConvertedFiles().containsKey(cacheName) || !ConfigConstants.isCacheEnabled()) {  //查询是否开启缓存
                 ReturnResponse<String> response = DownloadUtils.downLoad(fileAttribute, fileName);
                 if (response.isFailure()) {
@@ -85,7 +86,7 @@ public class MediaFilePreviewImpl implements FilePreview {
             return MEDIA_FILE_PREVIEW_PAGE;
         }
         if (type.equals(FileType.MEDIA)) {  // 支持输出 只限默认格式
-            model.addAttribute("mediaUrl", url);
+            model.addAttribute("mediaUrl", options.getEncodeUrl());
             return MEDIA_FILE_PREVIEW_PAGE;
         }
         return otherFilePreview.notSupportedFile(model, fileAttribute, "系统还不支持该格式文件的在线预览");

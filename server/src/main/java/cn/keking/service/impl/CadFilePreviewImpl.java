@@ -2,6 +2,7 @@ package cn.keking.service.impl;
 
 import cn.keking.config.ConfigConstants;
 import cn.keking.model.FileAttribute;
+import cn.keking.model.PreviewOptions;
 import cn.keking.model.ReturnResponse;
 import cn.keking.service.FileHandlerService;
 import cn.keking.service.FilePreview;
@@ -9,6 +10,8 @@ import cn.keking.utils.DownloadUtils;
 import cn.keking.utils.KkFileUtils;
 import cn.keking.utils.WebUtils;
 import cn.keking.web.filter.BaseUrlFilter;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -22,8 +25,9 @@ import static cn.keking.service.impl.OfficeFilePreviewImpl.getPreviewType;
  * @since 2019/11/21 14:28
  */
 @Service
+@AllArgsConstructor
+@Slf4j
 public class CadFilePreviewImpl implements FilePreview {
-
     private static final Logger logger = LoggerFactory.getLogger(CadFilePreviewImpl.class);
     private static final String OFFICE_PREVIEW_TYPE_IMAGE = "image";
     private static final String OFFICE_PREVIEW_TYPE_ALL_IMAGES = "allImages";
@@ -31,13 +35,9 @@ public class CadFilePreviewImpl implements FilePreview {
     private final FileHandlerService fileHandlerService;
     private final OtherFilePreviewImpl otherFilePreview;
 
-    public CadFilePreviewImpl(FileHandlerService fileHandlerService, OtherFilePreviewImpl otherFilePreview) {
-        this.fileHandlerService = fileHandlerService;
-        this.otherFilePreview = otherFilePreview;
-    }
 
     @Override
-    public String filePreviewHandle(String url, Model model, FileAttribute fileAttribute) {
+    public String filePreviewHandle(PreviewOptions options, Model model, FileAttribute fileAttribute) {
         // 预览Type，参数传了就取参数的，没传取系统默认
         String officePreviewType = fileAttribute.getOfficePreviewType() == null ? ConfigConstants.getOfficePreviewType() : fileAttribute.getOfficePreviewType();
         String baseUrl = BaseUrlFilter.getBaseUrl();

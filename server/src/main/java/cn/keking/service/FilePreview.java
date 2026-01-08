@@ -1,6 +1,7 @@
 package cn.keking.service;
 
 import cn.keking.model.FileAttribute;
+import cn.keking.model.PreviewOptions;
 import org.springframework.ui.Model;
 
 /**
@@ -35,5 +36,5 @@ public interface FilePreview {
     String XLSX_FILE_PREVIEW_PAGE = "officeweb";
     String CSV_FILE_PREVIEW_PAGE = "csv";
 
-    String filePreviewHandle(String url, Model model, FileAttribute fileAttribute);
+    String filePreviewHandle(PreviewOptions options, Model model, FileAttribute fileAttribute);
 }
